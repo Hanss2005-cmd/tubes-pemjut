@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A product available for sale or service information.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "string" },
+        "image": { "type": "string" },
+        "description": { "type": "string" },
+        "specs": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "price", "image", "description", "specs"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "A service offered by Mulya Cartridge.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["title", "description", "icon", "price"]
+    }
+  },
+  "firestore": {
+    "products": {
+      "schema": "Product",
+      "description": "Collection of products"
+    },
+    "services": {
+      "schema": "Service",
+      "description": "Collection of services"
+    }
+  }
+}
