@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A product available for sale or service information.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "string" },
+        "image": { "type": "string" },
+        "description": { "type": "string" },
+        "specs": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "price", "image", "description", "specs"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "A service offered by Mulya Cartridge.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["title", "description", "icon", "price"]
+    },
+    "DiagnosisRule": {
+      "title": "Diagnosis Rule",
+      "description": "A rule for the expert system.",
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "symptoms": { "type": "array", "items": { "type": "string" } },
+        "logic": { "type": "string" },
+        "questions": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "text": { "type": "string" },
+              "expected": { "type": "boolean" }
+            }
+          }
+        },
+        "diagnosis": { "type": "string" },
+        "solution": { "type": "string" }
+      },
+      "required": ["category", "symptoms", "logic", "questions", "diagnosis", "solution"]
+    },
+    "ExpertData": {
+      "title": "Expert Data",
+      "description": "Master data for symptoms.",
+      "type": "object",
+      "properties": {
+        "Printer": { "type": "object" },
+        "Laptop": { "type": "object" }
+      }
+    }
+  },
+  "firestore": {
+    "products": {
+      "schema": "Product",
+      "description": "Collection of products"
+    },
+    "services": {
+      "schema": "Service",
+      "description": "Collection of services"
+    },
+    "expert_rules": {
+      "schema": "DiagnosisRule",
+      "description": "Rules for the expert system diagnosis"
+    },
+    "expert_data": {
+      "schema": "ExpertData",
+      "description": "Reference data for symptoms and general questions"
+    }
+  }
+}

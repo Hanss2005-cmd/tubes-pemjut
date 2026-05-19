@@ -1,0 +1,8 @@
+{
+  "name": "MULYA CARTRIDGE",
+  "description": "Jual beli dan service printer, laptop, dan komputer profesional.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
