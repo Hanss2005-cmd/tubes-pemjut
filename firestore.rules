@@ -1,0 +1,132 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ---------------------------------------------------------
+    // GLOBAL HELPERS
+    // ---------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn();
+    }
+
+    function isAdmin() {
+      // Since public registration is disabled, anyone whose account exists in Firebase Auth is a valid admin.
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+       return id is string && id.size() <= 128;
+    }
+
+    // ---------------------------------------------------------
+    // DEFAULT DENY
+    // ---------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---------------------------------------------------------
+    // PRODUCTS
+    // ---------------------------------------------------------
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'category', 'price', 'image', 'description', 'specs'])
+        && data.name is string 
+        && data.category is string 
+        && data.price is string 
+        && data.image is string 
+        && data.description is string 
+        && data.specs is list;
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidProduct(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidProduct(incoming()) 
+        && (incoming().diff(existing()).affectedKeys().hasOnly(['name', 'category', 'price', 'image', 'description', 'specs', 'updatedAt']))
+        && (incoming().updatedAt == request.time || !incoming().keys().hasAny(['updatedAt']));
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------
+    // SERVICES
+    // ---------------------------------------------------------
+    function isValidService(data) {
+      return data.keys().hasAll(['title', 'description', 'price', 'icon'])
+        && data.title is string 
+        && data.description is string 
+        && data.price is string 
+        && data.icon is string;
+    }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(serviceId) && isValidService(incoming());
+      allow update: if isAdmin() && isValidId(serviceId) && isValidService(incoming())
+        && (incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'price', 'icon', 'image']));
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------
+    // EXPERT RULES
+    // ---------------------------------------------------------
+    function isValidExpertRule(data) {
+      return data.keys().hasAll(['category', 'symptoms', 'logic', 'questions', 'diagnosis', 'solution'])
+        && data.category in ['Printer', 'Laptop']
+        && data.logic in ['AND', 'OR']
+        && data.symptoms is list 
+        && data.questions is list 
+        && data.diagnosis is string 
+        && data.solution is string;
+    }
+
+    match /expert_rules/{ruleId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(ruleId) && isValidExpertRule(incoming());
+      allow update: if isAdmin() && isValidId(ruleId) && isValidExpertRule(incoming())
+        && (incoming().diff(existing()).affectedKeys().hasOnly(['category', 'symptoms', 'logic', 'questions', 'diagnosis', 'solution']));
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------
+    // EXPERT DATA
+    // ---------------------------------------------------------
+    function isValidExpertData(data) {
+      return data.keys().hasAll(['Printer', 'Laptop'])
+        && data.Printer.symptoms is list
+        && data.Laptop.symptoms is list;
+    }
+
+    match /expert_data/{dataId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidId(dataId) && isValidExpertData(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------
+    // VIDEOS & PROMO
+    // ---------------------------------------------------------
+    function isValidVideo(data) {
+      return data.keys().hasAll(['title', 'description', 'url'])
+        && data.title is string
+        && data.description is string
+        && data.url is string;
+    }
+
+    match /videos/{videoId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidVideo(incoming());
+      allow delete: if isAdmin();
+    }
+  }
+}
