@@ -11,6 +11,84 @@ interface Video {
   createdAt?: any;
 }
 
+interface VideoThumbnailImageProps {
+  url: string;
+  title: string;
+  category: string;
+  isDarkMode: boolean;
+  isMini?: boolean;
+  className?: string;
+}
+
+function VideoThumbnailImage({ url, title, category, isDarkMode, isMini = false, className = "" }: VideoThumbnailImageProps) {
+  const [hasError, setHasError] = useState(false);
+
+  const isAudioFile = (u: string) => {
+    if (!u) return false;
+    const cleanUrl = u.toLowerCase().split('?')[0];
+    return cleanUrl.endsWith('.wav') || 
+           cleanUrl.endsWith('.mp3') || 
+           cleanUrl.endsWith('.ogg') || 
+           cleanUrl.endsWith('.m4a') || 
+           u.toLowerCase().includes("audio%2f") || 
+           u.toLowerCase().includes("audio/");
+  };
+
+  const isGoogleDrive = (u: string) => {
+    if (!u) return false;
+    return u.includes("drive.google.com");
+  };
+
+  const getThumbnailUrl = (u: string) => {
+    if (isAudioFile(u)) {
+      return "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop";
+    }
+    const rawUrl = u.trim();
+    if (isGoogleDrive(rawUrl)) {
+      return "https://images.unsplash.com/photo-1626379953822-baec19c3bbcd?q=80&w=600&auto=format&fit=crop";
+    }
+    const ytMatch = rawUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+    }
+    return "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop";
+  };
+
+  if (hasError) {
+    if (isMini) {
+      return (
+        <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-950 text-white select-none p-2">
+          <Film className="w-5 h-5 text-blue-400" />
+          <span className="text-[8px] font-black tracking-widest text-blue-400 uppercase mt-1">
+            PLAY
+          </span>
+        </div>
+      );
+    }
+    return (
+      <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-950 text-white select-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.15),transparent_50%)]" />
+        <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/50 backdrop-blur-sm shadow-lg flex items-center justify-center relative">
+          <Film className="w-7 h-7 text-blue-400 animate-pulse" />
+        </div>
+        <span className="text-[10px] font-black tracking-widest text-slate-350 uppercase mt-3">
+          Mulya Video Hub
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={getThumbnailUrl(url)}
+      alt={title}
+      onError={() => setHasError(true)}
+      className={`${className} w-full h-full object-cover group-hover:scale-105 transition-transform duration-500`}
+      referrerPolicy="no-referrer"
+    />
+  );
+}
+
 interface VideoGalleryProps {
   videos: Video[];
   onClose: () => void;
@@ -195,11 +273,11 @@ export default function VideoGallery({ videos, onClose, isDarkMode }: VideoGalle
                 >
                   {/* Thumbnail Container */}
                   <div className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-slate-100 dark:border-slate-800 shadow-md">
-                    <img 
-                      src={getThumbnail(video.url)}
-                      alt={video.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      referrerPolicy="no-referrer"
+                    <VideoThumbnailImage 
+                      url={video.url}
+                      title={video.title}
+                      category={video.category}
+                      isDarkMode={isDarkMode}
                     />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="p-3 rounded-full bg-blue-600 text-white scale-90 group-hover:scale-100 transition-transform shadow-lg">
@@ -442,11 +520,12 @@ export default function VideoGallery({ videos, onClose, isDarkMode }: VideoGalle
                     >
                       {/* Video Snapshot Mini */}
                       <div className="w-32 h-20 rounded-xl overflow-hidden relative flex-shrink-0 bg-black shadow-inner border border-slate-200/50 dark:border-slate-800">
-                        <img 
-                          src={getThumbnail(video.url)}
-                          alt={video.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          referrerPolicy="no-referrer"
+                        <VideoThumbnailImage 
+                          url={video.url}
+                          title={video.title}
+                          category={video.category}
+                          isDarkMode={isDarkMode}
+                          isMini={true}
                         />
                         <div className="absolute inset-0 bg-black/35 flex items-center justify-center transition-all group-hover:bg-black/10">
                           <div className={`p-2 rounded-full backdrop-blur-md ${isActive ? 'bg-blue-600 text-white' : 'bg-white text-slate-950'} transition-transform group-hover:scale-110 shadow-md`}>
