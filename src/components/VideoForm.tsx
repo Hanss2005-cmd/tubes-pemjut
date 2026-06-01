@@ -76,11 +76,11 @@ export default function VideoForm({ video, onClose, isDarkMode }: VideoFormProps
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-[110] overflow-y-auto bg-black/80 backdrop-blur-md flex justify-center items-start p-4 sm:p-6 md:p-10">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`w-full max-w-2xl my-8 p-8 rounded-[2.5rem] shadow-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-white' : 'bg-white border border-slate-100 text-slate-900'}`}
+        className={`w-full max-w-2xl my-auto p-8 rounded-[2.5rem] shadow-2xl ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-white' : 'bg-white border border-slate-100 text-slate-900'}`}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">

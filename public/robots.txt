@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mulyacartidge.netlify.app/sitemap.xml
+Sitemap: https://mulyacartridge.netlify.app/sitemap.xml
