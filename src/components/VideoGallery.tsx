@@ -24,18 +24,44 @@ export default function VideoGallery({ videos, onClose, isDarkMode }: VideoGalle
 
   const categories = ["Semua", "Promo Terbaru", "Barang Baru", "Kegiatan Harian"];
 
+  const isGoogleDrive = (url: string) => {
+    if (!url) return false;
+    return url.includes("drive.google.com");
+  };
+
+  const getGoogleDriveEmbedUrl = (url: string) => {
+    let cleanUrl = url.trim();
+    const driveMatch = cleanUrl.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([^"&?\/\s]+)/i);
+    if (driveMatch && driveMatch[1]) {
+      return `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+    }
+    return cleanUrl;
+  };
+
   // Embed URL helper for YouTube videos
   const getEmbedUrl = (url: string) => {
     let rawUrl = url.trim();
     if (!rawUrl) return "";
 
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const originParam = origin ? `&origin=${encodeURIComponent(origin)}` : "";
+
     const ytMatch = rawUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
     if (ytMatch && ytMatch[1]) {
-      return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0`;
+      // Menggunakan youtube-nocookie.com dengan parameter origin resmi agar YouTube dapat memvalidasi asal domain penyemalan video
+      return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0${originParam}`;
     }
 
     if (rawUrl.includes("youtube.com/embed/") || rawUrl.includes("youtube-nocookie.com/embed/")) {
-      return rawUrl;
+      let cleanUrl = rawUrl.replace("youtube.com/embed/", "youtube-nocookie.com/embed/");
+      if (originParam) {
+        if (cleanUrl.includes("?")) {
+          return `${cleanUrl}${originParam}`;
+        } else {
+          return `${cleanUrl}?${originParam.slice(1)}`;
+        }
+      }
+      return cleanUrl;
     }
 
     return rawUrl;
@@ -62,6 +88,9 @@ export default function VideoGallery({ videos, onClose, isDarkMode }: VideoGalle
       return "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop";
     }
     const rawUrl = url.trim();
+    if (isGoogleDrive(rawUrl)) {
+      return "https://images.unsplash.com/photo-1626379953822-baec19c3bbcd?q=80&w=600&auto=format&fit=crop";
+    }
     const ytMatch = rawUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
     if (ytMatch && ytMatch[1]) {
       return `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
@@ -91,10 +120,14 @@ export default function VideoGallery({ videos, onClose, isDarkMode }: VideoGalle
                   onClose();
                 }
               }} 
-              className="inline-flex items-center gap-2 group text-blue-500 font-bold text-sm mb-4 cursor-pointer"
+              className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-sm border group mb-6 hover:-translate-y-0.5 hover:shadow-md cursor-pointer active:scale-95 ${
+                isDarkMode 
+                  ? 'bg-slate-900 hover:bg-slate-800 border-slate-800/80 text-slate-300 hover:text-white' 
+                  : 'bg-white hover:bg-slate-50 border-slate-200/80 text-slate-650 hover:text-slate-900'
+              }`}
             >
-              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1.5 transition-transform" />
-              {activeVideo ? "Kembali ke Beranda Hub" : "Kembali ke Beranda Utama"}
+              <ArrowLeft className="w-4 h-4 text-blue-600 group-hover:-translate-x-1 hover:text-blue-500 transition-all duration-300" />
+              <span>{activeVideo ? "Kembali ke Beranda Hub" : "Kembali ke Beranda Utama"}</span>
             </button>
             <div className="flex items-center gap-3">
               <div className="w-2 h-10 bg-blue-600 rounded-full" />
@@ -229,7 +262,14 @@ export default function VideoGallery({ videos, onClose, isDarkMode }: VideoGalle
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           allowFullScreen
                           title={activeVideo.title}
-                          referrerPolicy="no-referrer"
+                        />
+                      ) : isGoogleDrive(activeVideo.url) ? (
+                        <iframe 
+                          src={getGoogleDriveEmbedUrl(activeVideo.url)}
+                          className="absolute inset-0 w-full h-full border-0 text-white"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          title={activeVideo.title}
                         />
                       ) : isAudioFile(activeVideo.url) ? (
                         <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white select-none">
@@ -286,25 +326,72 @@ export default function VideoGallery({ videos, onClose, isDarkMode }: VideoGalle
                       )}
                     </div>
 
-                    {/* YouTube Backup/Alternative Access Link */}
-                    {isYoutube(activeVideo.url) && (
+                    {/* Direct File Download / Alternate Playback Tip */}
+                    {!isYoutube(activeVideo.url) && !isGoogleDrive(activeVideo.url) && (
                       <div className={`mt-4 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border text-xs leading-relaxed ${isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-100/70 border-slate-200 text-slate-700'}`}>
                         <div className="flex items-center gap-3">
-                          <Info className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                          <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />
                           <div>
-                            <span className="font-bold block text-slate-900 dark:text-white">Mengalami masalah dengan pemutar di atas?</span>
-                            Beberapa video YouTube membatasi penayangan di situs eksternal. Anda bisa menonton langsung ke YouTube.
+                            <span className="font-bold block text-slate-900 dark:text-white">Tips Pemutaran Video / Media:</span>
+                            Beberapa browser tidak mendukung pemutaran langsung format tertentu (seperti MKV/AVI/FLV) secara bawaan. Jika video tidak berputar atau macet, Anda dapat mengunduh video untuk diputar langsung di komputer/smartphone.
                           </div>
                         </div>
                         <a 
                           href={activeVideo.url}
+                          download
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl transition duration-300 flex items-center gap-2 shadow-md w-full sm:w-auto text-center justify-center flex-shrink-0 cursor-pointer"
+                          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition duration-300 flex items-center gap-2 shadow-md w-full sm:w-auto text-center justify-center flex-shrink-0 cursor-pointer"
                         >
-                          <Play className="w-4 h-4 fill-current" />
-                          Tonton di YouTube
+                          <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                          </svg>
+                          Unduh Media
                         </a>
+                      </div>
+                    )}
+
+                    {/* Google Drive Option Card */}
+                    {isGoogleDrive(activeVideo.url) && (
+                      <div className="mt-4">
+                        <div className={`p-4 rounded-2xl border text-xs flex flex-col sm:flex-row items-center justify-between gap-4 ${isDarkMode ? 'bg-slate-900/60 border-slate-800/80 text-slate-300' : 'bg-slate-100/70 border-slate-200/60 text-slate-700'}`}>
+                          <div className="flex items-center gap-3">
+                            <Info className="w-4.5 h-4.5 text-blue-500 flex-shrink-0" />
+                            <span className="font-bold">Menonton video premium host Google Drive. Bebas dari gangguan iklan & rekomendasi eksternal video orang lain!</span>
+                          </div>
+                          <a 
+                            href={activeVideo.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition duration-300 flex items-center justify-center gap-2 shadow-md w-full sm:w-auto text-center cursor-pointer"
+                          >
+                            <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                            </svg>
+                            Buka di Drive
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* YouTube Backup/Alternative Access Link */}
+                    {isYoutube(activeVideo.url) && (
+                      <div className="mt-4">
+                        <div className={`p-4 rounded-2xl border text-xs flex flex-col sm:flex-row items-center justify-between gap-4 ${isDarkMode ? 'bg-slate-900/60 border-slate-800/80 text-slate-300' : 'bg-slate-100/70 border-slate-200/60 text-slate-700'}`}>
+                          <div className="flex items-center gap-3">
+                            <Info className="w-4.5 h-4.5 text-blue-500 flex-shrink-0" />
+                            <span className="font-bold">Apakah media bermasalah atau tidak berputar? Anda bisa langsung membukanya di YouTube.</span>
+                          </div>
+                          <a 
+                            href={activeVideo.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl transition duration-300 flex items-center justify-center gap-2 shadow-md w-full sm:w-auto text-center cursor-pointer"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            Tonton di YouTube
+                          </a>
+                        </div>
                       </div>
                     )}
 
